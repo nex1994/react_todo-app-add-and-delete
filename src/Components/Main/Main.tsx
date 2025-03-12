@@ -1,4 +1,5 @@
 import { Todo } from '../../types/Todo';
+import { TODO_STATE, TodoState } from '../../types/TodoState';
 import { SingleTodo } from './SingleTodo';
 import { TemporaryTodo } from './TemporaryTodo';
 
@@ -6,15 +7,18 @@ import { TemporaryTodo } from './TemporaryTodo';
 type Props = {
   todos: Todo[] | [];
   tempTodo: Todo | null;
+  newTodoStatus: TodoState;
 };
 
-export const Main: React.FC<Props> = ({ todos, tempTodo }) => {
+export const Main: React.FC<Props> = ({ todos, tempTodo, newTodoStatus }) => {
   return (
     <section className="todoapp__main" data-cy="TodoList">
       {todos.map(todo => {
         return <SingleTodo key={todo.id} todo={todo} />;
       })}
-      {tempTodo && <TemporaryTodo tempTodo={tempTodo} />}
+      {tempTodo !== null && newTodoStatus === TODO_STATE.loading && (
+        <TemporaryTodo tempTodo={tempTodo} />
+      )}
     </section>
   );
 };

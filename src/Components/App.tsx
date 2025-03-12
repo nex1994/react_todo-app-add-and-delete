@@ -10,7 +10,6 @@ import { FILTER, Filter } from '../types/Filter';
 import { Status, STATUS } from '../types/Status';
 import { ErrorMessage } from './ErrorMessage';
 import { TODO_STATE, TodoState } from '../types/TodoState';
-const loadedTodos = getTodos();
 
 export const App: React.FC = () => {
   const [filter, setFilter] = useState<Filter>(FILTER.all);
@@ -20,6 +19,18 @@ export const App: React.FC = () => {
   const [newTodoTitle, setNewTodoTitle] = useState<string>('');
   const [tempTodo, setTempTodo] = useState<Todo | null>(null);
   const [newTodoState, setNewTodoState] = useState<TodoState>(TODO_STATE.idle);
+  const loadedTodos = () => {
+    return getTodos()
+      .then(data => {
+        setTodos(data);
+        setStatus(STATUS.resolved);
+      })
+      .catch(() => setErrorType(ERROR.couldntLoadTodos));
+  };
+
+  const addTodo = (todo: Todo) => {
+    setTodos([...todos, todo]);
+  };
 
   const filteredTodos = useMemo(() => {
     let filterTodos = todos;
@@ -43,16 +54,8 @@ export const App: React.FC = () => {
   useEffect(() => {
     setErrorType(ERROR.noError);
     setStatus(STATUS.pending);
-    loadedTodos
-      .then(data => {
-        setTodos(data);
-        setStatus(STATUS.resolved);
-      })
-      .catch(() => setErrorType(ERROR.couldntLoadTodos));
-    if (newTodoState === TODO_STATE.resolved) {
-      setTempTodo(null);
-    }
-  }, [newTodoState, todos]);
+    loadedTodos();
+  }, []);
 
   if (!USER_ID) {
     return <UserWarning />;
@@ -64,6 +67,7 @@ export const App: React.FC = () => {
 
       <div className="todoapp__content">
         <Header
+          addTodo={addTodo}
           setNewTodoState={setNewTodoState}
           tempTodo={tempTodo}
           setTempTodo={setTempTodo}
@@ -72,7 +76,11 @@ export const App: React.FC = () => {
           setNewTodoTitle={setNewTodoTitle}
         />
         {status === 'resolved' && (
-          <Main tempTodo={tempTodo} todos={filteredTodos} />
+          <Main
+            newTodoStatus={newTodoState}
+            tempTodo={tempTodo}
+            todos={filteredTodos}
+          />
         )}
         {status === 'resolved' && todos.length !== 0 && (
           <Footer todos={todos} filter={filter} setFilter={setFilter} />

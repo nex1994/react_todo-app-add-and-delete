@@ -1,8 +1,9 @@
 import { FormEventHandler } from 'react';
 import { ErrorType, ERROR } from '../../types/Error';
 import { Todo } from '../../types/Todo';
-import { addTodo, USER_ID } from '../../api/todos';
+import { USER_ID } from '../../api/todos';
 import { TODO_STATE, TodoState } from '../../types/TodoState';
+import { postTodo } from '../../api/todos';
 
 type Props = {
   newTodoTitle: string;
@@ -10,6 +11,7 @@ type Props = {
   setErrorType: (error: ErrorType) => void;
   setTempTodo: (todo: Todo | null) => void;
   setNewTodoState: (state: TodoState) => void;
+  addTodo: (todo: Todo) => void;
   tempTodo: Todo | null;
 };
 
@@ -19,36 +21,40 @@ export const Header: React.FC<Props> = ({
   setErrorType,
   setTempTodo,
   setNewTodoState,
-  tempTodo,
+  addTodo,
+  // tempTodo,
 }) => {
   const handleSumbit: FormEventHandler = event => {
     event.preventDefault();
-    // setNewTodoState(TODO_STATE.loading);
+
     if (newTodoTitle.trim() === '') {
       setErrorType(ERROR.noTitle);
     }
 
     if (newTodoTitle.trim() !== '') {
-      setErrorType(ERROR.noError);
-      setTempTodo({
+      setNewTodoState(TODO_STATE.loading);
+
+      const newTodo: Todo = {
         id: 0,
         userId: USER_ID,
         title: newTodoTitle,
         completed: false,
-      });
-    }
+      };
 
-    if (tempTodo) {
-      addTodo(tempTodo)
-        .then(data => {
+      setTempTodo(newTodo);
+
+      postTodo(newTodo)
+        .then(response => {
+          addTodo(response);
+          setNewTodoTitle('');
+          setTempTodo(null);
           setNewTodoState(TODO_STATE.resolved);
-
-          return data;
         })
         .catch(() => {
           setNewTodoState(TODO_STATE.rejected);
           setErrorType(ERROR.unableToAdd);
-        });
+        })
+        .finally(() => setNewTodoState(TODO_STATE.idle));
     }
   };
 
