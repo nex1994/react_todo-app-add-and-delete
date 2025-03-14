@@ -1,15 +1,24 @@
 import { Todo } from '../../types/Todo';
 import { FILTER, Filter } from '../../types/Filter';
 import classNames from 'classnames';
+import { ErrorType } from '../../types/Error';
 
 type Props = {
   todos: Todo[];
   filter: Filter;
   setFilter: (value: Filter) => void;
+  setTodos: (todos: Todo[]) => void;
+  setErrorType: (error: ErrorType) => void;
+  clearCompleted: () => void;
 };
 
-export const Footer: React.FC<Props> = ({ todos, filter, setFilter }) => {
-  let completedTodosCounter = 0;
+export const Footer: React.FC<Props> = ({
+  todos,
+  filter,
+  setFilter,
+  clearCompleted,
+}) => {
+  let uncompletedTodosCounter = 0;
   const allFilterCN = classNames('filter__link', {
     selected: filter === FILTER.all,
   });
@@ -22,14 +31,15 @@ export const Footer: React.FC<Props> = ({ todos, filter, setFilter }) => {
 
   todos.forEach(todo => {
     if (!todo.completed) {
-      completedTodosCounter++;
+      uncompletedTodosCounter++;
     }
   });
+  const completedTodosCounter = todos.length - uncompletedTodosCounter;
 
   return (
     <footer className="todoapp__footer" data-cy="Footer">
       <span className="todo-count" data-cy="TodosCounter">
-        {completedTodosCounter} items left
+        {uncompletedTodosCounter} items left
       </span>
 
       <nav className="filter" data-cy="Filter">
@@ -63,6 +73,8 @@ export const Footer: React.FC<Props> = ({ todos, filter, setFilter }) => {
 
       {/* this button should be disabled if there are no completed todos */}
       <button
+        onClick={clearCompleted}
+        disabled={completedTodosCounter === 0}
         type="button"
         className="todoapp__clear-completed"
         data-cy="ClearCompletedButton"

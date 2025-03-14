@@ -1,62 +1,29 @@
-import { FormEventHandler } from 'react';
-import { ErrorType, ERROR } from '../../types/Error';
+import { FormEventHandler, useEffect, useRef } from 'react';
+import { ErrorType } from '../../types/Error';
 import { Todo } from '../../types/Todo';
-import { USER_ID } from '../../api/todos';
-import { TODO_STATE, TodoState } from '../../types/TodoState';
-import { postTodo } from '../../api/todos';
 
 type Props = {
   newTodoTitle: string;
   setNewTodoTitle: (title: string) => void;
-  setErrorType: (error: ErrorType) => void;
-  setTempTodo: (todo: Todo | null) => void;
-  setNewTodoState: (state: TodoState) => void;
-  addTodo: (todo: Todo) => void;
+  todos: Todo[];
+  errorType: ErrorType;
+  handleSubmit: FormEventHandler;
   tempTodo: Todo | null;
 };
 
 export const Header: React.FC<Props> = ({
   newTodoTitle,
   setNewTodoTitle,
-  setErrorType,
-  setTempTodo,
-  setNewTodoState,
-  addTodo,
-  // tempTodo,
+  todos,
+  errorType,
+  handleSubmit,
+  tempTodo,
 }) => {
-  const handleSumbit: FormEventHandler = event => {
-    event.preventDefault();
+  const inputRef = useRef<HTMLInputElement>(null);
 
-    if (newTodoTitle.trim() === '') {
-      setErrorType(ERROR.noTitle);
-    }
-
-    if (newTodoTitle.trim() !== '') {
-      setNewTodoState(TODO_STATE.loading);
-
-      const newTodo: Todo = {
-        id: 0,
-        userId: USER_ID,
-        title: newTodoTitle,
-        completed: false,
-      };
-
-      setTempTodo(newTodo);
-
-      postTodo(newTodo)
-        .then(response => {
-          addTodo(response);
-          setNewTodoTitle('');
-          setTempTodo(null);
-          setNewTodoState(TODO_STATE.resolved);
-        })
-        .catch(() => {
-          setNewTodoState(TODO_STATE.rejected);
-          setErrorType(ERROR.unableToAdd);
-        })
-        .finally(() => setNewTodoState(TODO_STATE.idle));
-    }
-  };
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, [todos.length, errorType]);
 
   return (
     <header className="todoapp__header">
@@ -68,8 +35,10 @@ export const Header: React.FC<Props> = ({
       />
 
       {/* Add a todo on form submit */}
-      <form onSubmit={handleSumbit}>
+      <form onSubmit={handleSubmit}>
         <input
+          ref={inputRef}
+          disabled={tempTodo !== null}
           value={newTodoTitle}
           autoFocus
           data-cy="NewTodoField"

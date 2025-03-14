@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { FormEventHandler, useEffect, useMemo, useState } from 'react';
 import { UserWarning } from '../UserWarning';
-import { getTodos, USER_ID } from '../api/todos';
+import { deleteTodo, getTodos, postTodo, USER_ID } from '../api/todos';
 import { Header } from './Header';
 import { Main } from './Main';
 import { Footer } from './Footer';
@@ -9,16 +9,15 @@ import { ERROR, ErrorType } from '../types/Error';
 import { FILTER, Filter } from '../types/Filter';
 import { Status, STATUS } from '../types/Status';
 import { ErrorMessage } from './ErrorMessage';
-import { TODO_STATE, TodoState } from '../types/TodoState';
 
 export const App: React.FC = () => {
   const [filter, setFilter] = useState<Filter>(FILTER.all);
   const [todos, setTodos] = useState<Todo[] | []>([]);
   const [status, setStatus] = useState<Status>(STATUS.idle);
-  const [error, setErrorType] = useState<ErrorType>(ERROR.noError);
+  const [errorType, setErrorType] = useState<ErrorType>(ERROR.noError);
   const [newTodoTitle, setNewTodoTitle] = useState<string>('');
   const [tempTodo, setTempTodo] = useState<Todo | null>(null);
-  const [newTodoState, setNewTodoState] = useState<TodoState>(TODO_STATE.idle);
+  const [isLoading, setIsLoading] = useState<number[]>([]);
   const loadedTodos = () => {
     return getTodos()
       .then(data => {
@@ -28,8 +27,65 @@ export const App: React.FC = () => {
       .catch(() => setErrorType(ERROR.couldntLoadTodos));
   };
 
+  const completedTodos = todos.filter(todo => todo.completed);
+
   const addTodo = (todo: Todo) => {
     setTodos([...todos, todo]);
+  };
+
+  const handleSumbit: FormEventHandler = event => {
+    event.preventDefault();
+    const title = newTodoTitle.trim();
+
+    if (!title) {
+      setErrorType(ERROR.noTitle);
+    }
+
+    if (title) {
+      postTodo({
+        id: 0,
+        userId: USER_ID,
+        title: title,
+        completed: false,
+      })
+        .then(response => {
+          setErrorType(ERROR.noError);
+          setNewTodoTitle('');
+          addTodo(response);
+        })
+        .catch(() => {
+          setErrorType(ERROR.unableToAdd);
+        })
+        .finally(() => {
+          setTempTodo(null);
+        });
+      const newTodo: Todo = {
+        id: 0,
+        userId: USER_ID,
+        title: title,
+        completed: false,
+      };
+
+      setTempTodo(newTodo);
+    }
+  };
+
+  const handleDeletion = (todoId: number) => {
+    setIsLoading(prev => [...prev, todoId]);
+    deleteTodo(todoId)
+      .then(() => {
+        setTodos(prev =>
+          prev.filter(searchedTodo => searchedTodo.id !== todoId),
+        );
+      })
+      .catch(() => {
+        setErrorType(ERROR.unableToDelete);
+      })
+      .finally(() => setIsLoading(isLoading.filter(id => id !== todoId)));
+  };
+
+  const clearCompleted = () => {
+    completedTodos.forEach(todo => handleDeletion(todo.id));
   };
 
   const filteredTodos = useMemo(() => {
@@ -67,27 +123,35 @@ export const App: React.FC = () => {
 
       <div className="todoapp__content">
         <Header
-          addTodo={addTodo}
-          setNewTodoState={setNewTodoState}
           tempTodo={tempTodo}
-          setTempTodo={setTempTodo}
-          setErrorType={setErrorType}
+          handleSubmit={handleSumbit}
+          errorType={errorType}
+          todos={todos}
           newTodoTitle={newTodoTitle}
           setNewTodoTitle={setNewTodoTitle}
         />
         {status === 'resolved' && (
           <Main
-            newTodoStatus={newTodoState}
+            isLoading={isLoading}
+            handleDeletion={handleDeletion}
+            setTodos={setTodos}
             tempTodo={tempTodo}
             todos={filteredTodos}
           />
         )}
         {status === 'resolved' && todos.length !== 0 && (
-          <Footer todos={todos} filter={filter} setFilter={setFilter} />
+          <Footer
+            clearCompleted={clearCompleted}
+            setErrorType={setErrorType}
+            setTodos={setTodos}
+            todos={todos}
+            filter={filter}
+            setFilter={setFilter}
+          />
         )}
       </div>
 
-      <ErrorMessage error={error} />
+      <ErrorMessage error={errorType} />
     </div>
   );
 };
