@@ -9,7 +9,6 @@ import { ERROR, ErrorType } from '../types/Error';
 import { FILTER, Filter } from '../types/Filter';
 import { Status, STATUS } from '../types/Status';
 import { ErrorMessage } from './ErrorMessage';
-
 export const App: React.FC = () => {
   const [filter, setFilter] = useState<Filter>(FILTER.all);
   const [todos, setTodos] = useState<Todo[] | []>([]);
@@ -39,6 +38,8 @@ export const App: React.FC = () => {
 
     if (!title) {
       setErrorType(ERROR.noTitle);
+
+      return;
     }
 
     if (title) {
@@ -151,7 +152,7 @@ export const App: React.FC = () => {
         )}
       </div>
 
-      <ErrorMessage error={errorType} />
+      <ErrorMessage error={errorType} setErrorType={setErrorType} />
     </div>
   );
 };

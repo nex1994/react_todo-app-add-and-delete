@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
-import { ERROR } from '../../types/Error';
+import { ERROR, ErrorType } from '../../types/Error';
 import classNames from 'classnames';
 
 type Props = {
-  error: (typeof ERROR)[keyof typeof ERROR];
+  error: ErrorType;
+  setErrorType: (error: ErrorType) => void;
 };
 
-export const ErrorMessage: React.FC<Props> = ({ error }) => {
+export const ErrorMessage: React.FC<Props> = ({ error, setErrorType }) => {
   const [isVisible, setIsVisible] = useState<boolean>(false);
 
   useEffect(() => {
@@ -16,8 +17,18 @@ export const ErrorMessage: React.FC<Props> = ({ error }) => {
       setIsVisible(true);
     }
 
-    setTimeout(() => setIsVisible(false), 3000);
-  }, [error]);
+    setTimeout(() => {
+      if (isVisible) {
+        setIsVisible(false);
+      }
+    }, 3000);
+
+    return () => {
+      if (isVisible && error !== ERROR.noError) {
+        setErrorType(ERROR.noError);
+      }
+    };
+  }, [error, isVisible, setErrorType]);
 
   const errorClassName = classNames(
     { hidden: !isVisible },
