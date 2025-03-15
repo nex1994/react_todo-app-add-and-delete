@@ -81,11 +81,11 @@ export const App: React.FC = () => {
       })
       .catch(() => {
         setErrorType(ERROR.unableToDelete);
-      })
-      .finally(() => setIsLoading(isLoading.filter(id => id !== todoId)));
+      });
   };
 
   const clearCompleted = () => {
+    setIsLoading([]);
     completedTodos.forEach(todo => handleDeletion(todo.id));
   };
 
